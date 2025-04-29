@@ -1,0 +1,1621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mirror Maze Mayhem</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            background-color: #000;
+            color: #fff;
+        }
+        #gameContainer {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+        #leftView, #rightView {
+            position: absolute;
+            top: 0;
+            width: 50%;
+            height: 100%;
+        }
+        #leftView {
+            left: 0;
+            border-right: 1px solid #444;
+        }
+        #rightView {
+            right: 0;
+            border-left: 1px solid #444;
+        }
+        #ui {
+            position: absolute;
+            top: 10px;
+            left: 0;
+            width: 100%;
+            padding: 10px;
+            text-align: center;
+            pointer-events: none;
+            z-index: 100;
+        }
+        #levelIndicator {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 5px 10px;
+            background: rgba(0,0,0,0.7);
+            border-radius: 5px;
+        }
+        #deathCount {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            background: rgba(0,0,0,0.7);
+            border-radius: 5px;
+        }
+        #messageBox {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 15px 30px;
+            background: rgba(0,0,0,0.8);
+            border-radius: 10px;
+            font-size: 24px;
+            white-space: nowrap;
+            display: none;
+        }
+        #startScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        #startScreen h1 {
+            color: #ff3366;
+            font-size: 48px;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px rgba(255,51,102,0.5);
+        }
+        #startScreen p {
+            color: #fff;
+            font-size: 18px;
+            max-width: 600px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        #startButton {
+            padding: 15px 30px;
+            background: #ff3366;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        #startButton:hover {
+            background: #ff5588;
+            transform: scale(1.05);
+        }
+        #levelCompleteScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        #levelCompleteScreen h2 {
+            color: #33ff88;
+            font-size: 36px;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px rgba(51,255,136,0.5);
+        }
+        #levelCompleteScreen p {
+            color: #fff;
+            font-size: 18px;
+            max-width: 600px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        #nextLevelButton {
+            padding: 15px 30px;
+            background: #33ff88;
+            color: #000;
+            border: none;
+            border-radius: 5px;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        #nextLevelButton:hover {
+            background: #66ffaa;
+            transform: scale(1.05);
+        }
+        #gameCompleteScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        #gameCompleteScreen h2 {
+            color: gold;
+            font-size: 48px;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px rgba(255,215,0,0.5);
+        }
+        #gameCompleteScreen p {
+            color: #fff;
+            font-size: 20px;
+            max-width: 600px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        #restartButton {
+            padding: 15px 30px;
+            background: gold;
+            color: #000;
+            border: none;
+            border-radius: 5px;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        #restartButton:hover {
+            background: #ffe666;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="leftView"></div>
+        <div id="rightView"></div>
+        <div id="ui">
+            <div id="levelIndicator">Level: 1</div>
+            <div id="deathCount">Deaths: 0</div>
+            <div id="messageBox"></div>
+        </div>
+    </div>
+    
+    <div id="startScreen">
+        <h1>Mirror Maze Mayhem</h1>
+        <p>Navigate two characters through separate mazes simultaneously! The character on the left follows your inputs directly, while the character on the right is in a mirror world where left and right are reversed.</p>
+        <p>Controls: W = Forward, S = Backward, A = Turn Left, D = Turn Right, SPACE = Jump</p>
+        <p>Goal: Guide both characters to their respective exits within 1 second of each other. If one reaches the exit too early or either character dies, the level resets!</p>
+        <button id="startButton">Start Game</button>
+    </div>
+    
+    <div id="levelCompleteScreen">
+        <h2>Level Complete!</h2>
+        <p id="levelCompleteMessage">You managed to solve this one. Let's see if you can handle the next challenge.</p>
+        <button id="nextLevelButton">Next Level</button>
+    </div>
+    
+    <div id="gameCompleteScreen">
+        <h2>Congratulations!</h2>
+        <p>You've conquered all five levels of Mirror Maze Mayhem! Your brain must be twisted beyond repair by now.</p>
+        <p id="finalStats">Total Deaths: 0 | Time: 0:00</p>
+        <button id="restartButton">Play Again</button>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Game state
+        const gameState = {
+            level: 1,
+            deathCount: 0,
+            startTime: null,
+            totalTime: 0,
+            isPlaying: false,
+            leftCharacterAtExit: false,
+            rightCharacterAtExit: false,
+            exitSyncTimer: null
+        };
+        
+        // Mock messages
+        const mockMessages = [
+            "Wrong again! Do you even understand mirrors?",
+            "Mirror, mirror, you're both terrible.",
+            "That was... pitiful. Even my grandma could do better.",
+            "Did you forget which way is left? Again?",
+            "You almost had it... but not really.",
+            "Two characters, twice the failure.",
+            "Maybe try closing your eyes? Can't be worse than that attempt.",
+            "Are you intentionally trying to fail?",
+            "I'm starting to think you enjoy watching them die.",
+            "Left, right, dead, dead. The cycle continues."
+        ];
+        
+        // Scenes, cameras, renderers
+        let leftScene, rightScene, leftCamera, rightCamera, leftRenderer, rightRenderer;
+        
+        // Characters
+        let leftCharacter, rightCharacter;
+        
+        // Controls
+        const keys = {
+            w: false,
+            a: false,
+            s: false,
+            d: false,
+            space: false
+        };
+        
+        // Level configurations
+        const levels = [
+            // Level 1: Intro to Mirror Hell
+            {
+                name: "Intro to Mirror Hell",
+                description: "Simple mirrored movement tutorial. No traps yet.",
+                leftMaze: [
+                    "XXXXXXXXXXXXX",
+                    "XS          X",
+                    "X XXXXXXXXX X",
+                    "X X       X X",
+                    "X X XXXXX X X",
+                    "X X X   X X X",
+                    "X X X X X X X",
+                    "X X X X X X X",
+                    "X X XXX X X X",
+                    "X X     X X X",
+                    "X XXXXXXX X X",
+                    "X         XEX",
+                    "XXXXXXXXXXXXX"
+                ],
+                rightMaze: [
+                    "XXXXXXXXXXXXX",
+                    "X          SX",
+                    "X XXXXXXXXX X",
+                    "X X       X X",
+                    "X X XXXXX X X",
+                    "X X X   X X X",
+                    "X X X X X X X",
+                    "X X X X X X X",
+                    "X X XXX X X X",
+                    "X X     X X X",
+                    "X X XXXXXXX X",
+                    "XE         X",
+                    "XXXXXXXXXXXXX"
+                ],
+                traps: [],
+                buttons: []
+            },
+            // Level 2: Switcheroo
+            {
+                name: "Switcheroo",
+                description: "One-way doors and pressure plates. Trigger a door for the other character.",
+                leftMaze: [
+                    "XXXXXXXXXXXXX",
+                    "XS          X",
+                    "XXXXX XXXXXX",
+                    "X   X X    X",
+                    "X X X X XX X",
+                    "X X X B XX X",
+                    "X X X XXXD X",
+                    "X X X    X X",
+                    "X X XXXXXX X",
+                    "X X        X",
+                    "X XXXXXXXXXX",
+                    "X         EX",
+                    "XXXXXXXXXXXXX"
+                ],
+                rightMaze: [
+                    "XXXXXXXXXXXXX",
+                    "X          SX",
+                    "XXXXXX XXXXX",
+                    "X    X X   X",
+                    "X XX X X X X",
+                    "X XX B X X X",
+                    "X D    X X X",
+                    "X XXXX X X X",
+                    "X XXXXXX X X",
+                    "X        X X",
+                    "XXXXXXXXXX X",
+                    "XE         X",
+                    "XXXXXXXXXXXXX"
+                ],
+                traps: [],
+                buttons: [
+                    // Left maze button opens right maze door
+                    { 
+                        side: "left", 
+                        position: { x: 5, y: 5 }, 
+                        doorSide: "right", 
+                        doorPosition: { x: 1, y: 6 },
+                        timer: 5
+                    },
+                    // Right maze button opens left maze door
+                    { 
+                        side: "right", 
+                        position: { x: 7, y: 5 }, 
+                        doorSide: "left", 
+                        doorPosition: { x: 11, y: 6 },
+                        timer: 5
+                    }
+                ]
+            },
+            // Level 3: Blades of Despair
+            {
+                name: "Blades of Despair",
+                description: "Spinning blades activate every 3 seconds. Desync then re-sync to survive.",
+                leftMaze: [
+                    "XXXXXXXXXXXXX",
+                    "XS         EX",
+                    "XXXXX XXXXXX",
+                    "X   X X    X",
+                    "X X X X XX X",
+                    "X X T T TX X",
+                    "X X T X TX X",
+                    "X X X T  X X",
+                    "X X XXXXXX X",
+                    "X X T  T T X",
+                    "X XXXXXXXXXX",
+                    "X           X",
+                    "XXXXXXXXXXXXX"
+                ],
+                rightMaze: [
+                    "XXXXXXXXXXXXX",
+                    "XE         SX",
+                    "XXXXXX XXXXX",
+                    "X    X X   X",
+                    "X XX X X X X",
+                    "X XT T T X X",
+                    "X XT X T X X",
+                    "X X  T X X X",
+                    "X XXXXXX X X",
+                    "X T T  T X X",
+                    "XXXXXXXXXX X",
+                    "X           X",
+                    "XXXXXXXXXXXXX"
+                ],
+                traps: [
+                    // Left maze traps - more blades with varied timing
+                    { side: "left", type: "blade", position: { x: 4, y: 5 }, timing: 3 },
+                    { side: "left", type: "blade", position: { x: 6, y: 5 }, timing: 2.5 },
+                    { side: "left", type: "blade", position: { x: 8, y: 5 }, timing: 3.5 },
+                    { side: "left", type: "blade", position: { x: 4, y: 6 }, timing: 2 },
+                    { side: "left", type: "blade", position: { x: 8, y: 6 }, timing: 3 },
+                    { side: "left", type: "blade", position: { x: 6, y: 7 }, timing: 2.5 },
+                    { side: "left", type: "blade", position: { x: 4, y: 9 }, timing: 3 },
+                    { side: "left", type: "blade", position: { x: 6, y: 9 }, timing: 2 },
+                    { side: "left", type: "blade", position: { x: 8, y: 9 }, timing: 3.5 },
+                    
+                    // Right maze traps - mirrored with slightly different timing
+                    { side: "right", type: "blade", position: { x: 8, y: 5 }, timing: 3 },
+                    { side: "right", type: "blade", position: { x: 6, y: 5 }, timing: 2.5 },
+                    { side: "right", type: "blade", position: { x: 4, y: 5 }, timing: 3.5 },
+                    { side: "right", type: "blade", position: { x: 8, y: 6 }, timing: 2 },
+                    { side: "right", type: "blade", position: { x: 4, y: 6 }, timing: 3 },
+                    { side: "right", type: "blade", position: { x: 6, y: 7 }, timing: 2.5 },
+                    { side: "right", type: "blade", position: { x: 8, y: 9 }, timing: 3 },
+                    { side: "right", type: "blade", position: { x: 6, y: 9 }, timing: 2 },
+                    { side: "right", type: "blade", position: { x: 4, y: 9 }, timing: 3.5 }
+                ],
+                buttons: []
+            },
+            // Level 4: The Fake Exit
+            {
+                name: "The Fake Exit",
+                description: "One exit is real, one is a trap. Only one character can see the right answer.",
+                leftMaze: [
+                    "XXXXXXXXXXXXX",
+                    "XS          X",
+                    "XXXXX XXXXXX",
+                    "X   X X    X",
+                    "X X X X XX X",
+                    "X X X B XX X",
+                    "X X XXXDX X X",
+                    "X X      X X",
+                    "X XXXXXXX X X",
+                    "X X     F  X",
+                    "X XXXX XXXXX",
+                    "X         EX",
+                    "XXXXXXXXXXXXX"
+                ],
+                rightMaze: [
+                    "XXXXXXXXXXXXX",
+                    "X          SX",
+                    "XXXXXX XXXXX",
+                    "X    X X   X",
+                    "X XX X X X X",
+                    "X XX B X X X",
+                    "X X XDXXX X X",
+                    "X X      X X",
+                    "X XXXXXXX X X",
+                    "X  F     X X",
+                    "XXXXX XXXX X",
+                    "XE         X",
+                    "XXXXXXXXXXXXX"
+                ],
+                traps: [
+                    // Repositioned fake exits to ensure viable paths
+                    { side: "left", type: "fake_exit", position: { x: 9, y: 9 } },
+                    { side: "right", type: "fake_exit", position: { x: 3, y: 9 } }
+                ],
+                buttons: [
+                    // Modified button setup with adequate timers
+                    { 
+                        side: "left", 
+                        position: { x: 5, y: 5 }, 
+                        doorSide: "right", 
+                        doorPosition: { x: 4, y: 6 },
+                        timer: 6
+                    },
+                    { 
+                        side: "right", 
+                        position: { x: 7, y: 5 }, 
+                        doorSide: "left", 
+                        doorPosition: { x: 8, y: 6 },
+                        timer: 6
+                    }
+                ]
+            },
+            // Level 5: Final Descent
+            {
+                name: "Final Descent",
+                description: "Multi-floor maze with moving platforms. Maximum difficulty.",
+                leftMaze: [
+                    "XXXXXXXXXXXXX",
+                    "XS          X",
+                    "XXXX XXXXXXXX",
+                    "X  X X      X",
+                    "X XX X XXXX X",
+                    "X    X X  X X",
+                    "XXXXXX X TX X",
+                    "X      X BX X",
+                    "X XXXXXX XX X",
+                    "X X      XD X",
+                    "X X XXXXXX  X",
+                    "X X       XEX",
+                    "XXXXXXXXXXXXX"
+                ],
+                rightMaze: [
+                    "XXXXXXXXXXXXX",
+                    "X          SX",
+                    "XXXXXXXX XXXX",
+                    "X      X X  X",
+                    "X XXXX X XX X",
+                    "X X  X X    X",
+                    "X XT X XXXXXX",
+                    "X XB X      X",
+                    "X XX XXXXXX X",
+                    "X DX      X X",
+                    "X  XXXXXX X X",
+                    "XE       X X X",
+                    "XXXXXXXXXXXXX"
+                ],
+                traps: [
+                    // Left maze traps
+                    { side: "left", type: "blade", position: { x: 8, y: 6 }, timing: 2 },
+                    { side: "left", type: "lava", position: { x: 5, y: 10 } },
+                    
+                    // Right maze traps
+                    { side: "right", type: "blade", position: { x: 4, y: 6 }, timing: 2 },
+                    { side: "right", type: "lava", position: { x: 7, y: 2 } }
+                ],
+                buttons: [
+                    // More complex button patterns
+                    { 
+                        side: "left", 
+                        position: { x: 7, y: 7 }, 
+                        doorSide: "right", 
+                        doorPosition: { x: 3, y: 9 },
+                        timer: 4
+                    },
+                    { 
+                        side: "right", 
+                        position: { x: 5, y: 7 }, 
+                        doorSide: "left", 
+                        doorPosition: { x: 9, y: 9 },
+                        timer: 4
+                    }
+                ],
+                // Moving platforms
+                platforms: [
+                    { 
+                        side: "left", 
+                        startPosition: { x: 3, y: 5 }, 
+                        endPosition: { x: 3, y: 8 },
+                        speed: 0.02,
+                        direction: 1  // 1 for forward, -1 for backward
+                    },
+                    { 
+                        side: "right", 
+                        startPosition: { x: 9, y: 5 }, 
+                        endPosition: { x: 9, y: 8 },
+                        speed: 0.02,
+                        direction: 1
+                    }
+                ]
+            }
+        ];
+        
+        // Active game elements
+        let activeDoors = [];
+        let activeTraps = [];
+        let activeButtons = [];
+        let activePlatforms = [];
+        
+        // Initialize the game
+        function init() {
+            // Set up Three.js scenes
+            setupThreeJS();
+            
+            // Event listeners
+            document.getElementById('startButton').addEventListener('click', startGame);
+            document.getElementById('nextLevelButton').addEventListener('click', nextLevel);
+            document.getElementById('restartButton').addEventListener('click', restartGame);
+            
+            // Keyboard controls
+            window.addEventListener('keydown', (e) => {
+                if (e.key.toLowerCase() === 'w') keys.w = true;
+                if (e.key.toLowerCase() === 'a') keys.a = true;
+                if (e.key.toLowerCase() === 's') keys.s = true;
+                if (e.key.toLowerCase() === 'd') keys.d = true;
+                if (e.key === ' ') keys.space = true;
+            });
+            
+            window.addEventListener('keyup', (e) => {
+                if (e.key.toLowerCase() === 'w') keys.w = false;
+                if (e.key.toLowerCase() === 'a') keys.a = false;
+                if (e.key.toLowerCase() === 's') keys.s = false;
+                if (e.key.toLowerCase() === 'd') keys.d = false;
+                if (e.key === ' ') keys.space = false;
+            });
+            
+            // Start animation loop
+            animate();
+        }
+        
+        // Set up Three.js scenes, cameras, renderers
+        function setupThreeJS() {
+            // Left scene
+            leftScene = new THREE.Scene();
+            leftScene.background = new THREE.Color(0x111122);
+            leftCamera = new THREE.PerspectiveCamera(75, window.innerWidth / 2 / window.innerHeight, 0.1, 1000);
+            leftCamera.position.set(0, 10, 5);
+            leftCamera.lookAt(0, 0, 0);
+            
+            // Right scene
+            rightScene = new THREE.Scene();
+            rightScene.background = new THREE.Color(0x221111);
+            rightCamera = new THREE.PerspectiveCamera(75, window.innerWidth / 2 / window.innerHeight, 0.1, 1000);
+            rightCamera.position.set(0, 10, 5);
+            rightCamera.lookAt(0, 0, 0);
+            
+            // Renderers
+            leftRenderer = new THREE.WebGLRenderer({ antialias: true });
+            leftRenderer.setSize(window.innerWidth / 2, window.innerHeight);
+            document.getElementById('leftView').appendChild(leftRenderer.domElement);
+            
+            rightRenderer = new THREE.WebGLRenderer({ antialias: true });
+            rightRenderer.setSize(window.innerWidth / 2, window.innerHeight);
+            document.getElementById('rightView').appendChild(rightRenderer.domElement);
+            
+            // Add lighting
+            addLighting(leftScene);
+            addLighting(rightScene);
+            
+            // Handle window resize
+            window.addEventListener('resize', () => {
+                leftCamera.aspect = window.innerWidth / 2 / window.innerHeight;
+                leftCamera.updateProjectionMatrix();
+                leftRenderer.setSize(window.innerWidth / 2, window.innerHeight);
+                
+                rightCamera.aspect = window.innerWidth / 2 / window.innerHeight;
+                rightCamera.updateProjectionMatrix();
+                rightRenderer.setSize(window.innerWidth / 2, window.innerHeight);
+            });
+        }
+        
+        // Add lighting to a scene
+        function addLighting(scene) {
+            const ambientLight = new THREE.AmbientLight(0x666666);
+            scene.add(ambientLight);
+            
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(5, 10, 7);
+            scene.add(directionalLight);
+            
+            const pointLight = new THREE.PointLight(0xffffff, 0.5);
+            pointLight.position.set(0, 8, 0);
+            scene.add(pointLight);
+        }
+        
+        // Start the game
+        function startGame() {
+            document.getElementById('startScreen').style.display = 'none';
+            gameState.isPlaying = true;
+            gameState.startTime = Date.now();
+            gameState.level = 1;
+            gameState.deathCount = 0;
+            updateUI();
+            loadLevel(gameState.level);
+        }
+        
+        // Move to the next level
+        function nextLevel() {
+            document.getElementById('levelCompleteScreen').style.display = 'none';
+            gameState.level++;
+            
+            if (gameState.level > levels.length) {
+                completeGame();
+                return;
+            }
+            
+            loadLevel(gameState.level);
+            updateUI();
+        }
+        
+        // Restart the game
+        function restartGame() {
+            document.getElementById('gameCompleteScreen').style.display = 'none';
+            gameState.level = 1;
+            gameState.deathCount = 0;
+            gameState.startTime = Date.now();
+            loadLevel(gameState.level);
+            updateUI();
+        }
+        
+        // Complete the game
+        function completeGame() {
+            gameState.totalTime = Math.floor((Date.now() - gameState.startTime) / 1000);
+            const minutes = Math.floor(gameState.totalTime / 60);
+            const seconds = gameState.totalTime % 60;
+            
+            document.getElementById('finalStats').textContent = `Total Deaths: ${gameState.deathCount} | Time: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+            document.getElementById('gameCompleteScreen').style.display = 'flex';
+        }
+        
+        // Load a level
+        function loadLevel(levelIndex) {
+            const level = levels[levelIndex - 1];
+            
+            // Clear previous level
+            clearLevel();
+            
+            // Build mazes
+            buildMaze(level.leftMaze, leftScene, "left");
+            buildMaze(level.rightMaze, rightScene, "right");
+            
+            // Create characters
+            createCharacters();
+            
+            // Add traps
+            level.traps.forEach(trap => {
+                addTrap(trap);
+            });
+            
+            // Add buttons and doors
+            level.buttons.forEach(button => {
+                addButton(button);
+            });
+            
+            // Add platforms (Level 5)
+            if (level.platforms) {
+                level.platforms.forEach(platform => {
+                    addPlatform(platform);
+                });
+            }
+            
+            // Reset game state for level
+            gameState.leftCharacterAtExit = false;
+            gameState.rightCharacterAtExit = false;
+            
+            // Update level indicator
+            document.getElementById('levelIndicator').textContent = `Level: ${levelIndex} - ${level.name}`;
+        }
+        
+        // Clear the current level
+        function clearLevel() {
+            // Remove all objects except lights
+            while (leftScene.children.length > 3) {
+                leftScene.remove(leftScene.children[3]);
+            }
+            
+            while (rightScene.children.length > 3) {
+                rightScene.remove(rightScene.children[3]);
+            }
+            
+            // Clear active game elements
+            activeDoors = [];
+            activeTraps = [];
+            activeButtons = [];
+            activePlatforms = [];
+        }
+        
+        // Build a maze from a map
+        function buildMaze(mazeMap, scene, side) {
+            const wallMaterial = new THREE.MeshPhongMaterial({ 
+                color: side === "left" ? 0x3366cc : 0xcc3366,
+                specular: 0x111111,
+                shininess: 30
+            });
+            
+            const floorMaterial = new THREE.MeshPhongMaterial({ 
+                color: side === "left" ? 0x223344 : 0x442233,
+                specular: 0x222222,
+                shininess: 10
+            });
+            
+            const exitMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x33ff66,
+                emissive: 0x116622,
+                specular: 0x66ff99,
+                shininess: 50
+            });
+            
+            // Create floor
+            const floorGeometry = new THREE.PlaneGeometry(mazeMap[0].length, mazeMap.length);
+            const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+            floor.rotation.x = -Math.PI / 2;
+            floor.position.set((mazeMap[0].length - 1) / 2, -0.5, (mazeMap.length - 1) / 2);
+            scene.add(floor);
+            
+            // Build walls and objects
+            for (let z = 0; z < mazeMap.length; z++) {
+                for (let x = 0; x < mazeMap[z].length; x++) {
+                    const tile = mazeMap[z][x];
+                    
+                    // Wall
+                    if (tile === 'X') {
+                        const wallGeometry = new THREE.BoxGeometry(1, 1, 1);
+                        const wall = new THREE.Mesh(wallGeometry, wallMaterial);
+                        wall.position.set(x, 0, z);
+                        scene.add(wall);
+                    }
+                    
+                    // Starting position
+                    else if (tile === 'S') {
+                        // This will be handled by character creation
+                        if (side === "left") {
+                            leftCharacterStartPos = { x, z };
+                        } else {
+                            rightCharacterStartPos = { x, z };
+                        }
+                    }
+                    
+                    // Exit
+                    else if (tile === 'E') {
+                        const exitGeometry = new THREE.BoxGeometry(1, 0.1, 1);
+                        const exit = new THREE.Mesh(exitGeometry, exitMaterial);
+                        exit.position.set(x, -0.45, z);
+                        scene.add(exit);
+                        
+                        // Add to game logic
+                        const exitObj = { position: { x, z }, mesh: exit };
+                        if (side === "left") {
+                            leftExit = exitObj;
+                        } else {
+                            rightExit = exitObj;
+                        }
+                    }
+                    
+                    // Door (initially closed)
+                    else if (tile === 'D') {
+                        const doorGeometry = new THREE.BoxGeometry(1, 1, 1);
+                        const doorMaterial = new THREE.MeshPhongMaterial({ 
+                            color: 0xaa6633,
+                            transparent: true,
+                            opacity: 0.8
+                        });
+                        
+                        const door = new THREE.Mesh(doorGeometry, doorMaterial);
+                        door.position.set(x, 0, z);
+                        scene.add(door);
+                        
+                        // Add to active doors
+                        activeDoors.push({
+                            side,
+                            position: { x, z },
+                            mesh: door,
+                            isOpen: false,
+                            timer: 0
+                        });
+                    }
+                    
+                    // Fake exit (looks like exit but kills player)
+                    else if (tile === 'F') {
+                        const fakeExitGeometry = new THREE.BoxGeometry(1, 0.1, 1);
+                        const fakeExitMaterial = new THREE.MeshPhongMaterial({ 
+                            color: 0x33ff66,  // Same color as exit
+                            emissive: 0x116622,
+                            specular: 0x66ff99,
+                            shininess: 50
+                        });
+                        
+                        const fakeExit = new THREE.Mesh(fakeExitGeometry, fakeExitMaterial);
+                        fakeExit.position.set(x, -0.45, z);
+                        scene.add(fakeExit);
+                    }
+                }
+            }
+        }
+        
+        // Create character meshes
+        function createCharacters() {
+            // Character materials
+            const leftCharacterMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x00ff99,
+                emissive: 0x006633,
+                specular: 0x33ffaa, 
+                shininess: 30 
+            });
+            
+            const rightCharacterMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0xff9900,
+                emissive: 0x663300,
+                specular: 0xffaa33, 
+                shininess: 30 
+            });
+            
+            // Get starting positions from the level
+            const leftStartPos = { x: 0, z: 0 };
+            const rightStartPos = { x: 0, z: 0 };
+            
+            // Find starting positions in the current level
+            const level = levels[gameState.level - 1];
+            
+            for (let z = 0; z < level.leftMaze.length; z++) {
+                for (let x = 0; x < level.leftMaze[z].length; x++) {
+                    if (level.leftMaze[z][x] === 'S') {
+                        leftStartPos.x = x;
+                        leftStartPos.z = z;
+                    }
+                    
+                    if (level.rightMaze[z][x] === 'S') {
+                        rightStartPos.x = x;
+                        rightStartPos.z = z;
+                    }
+                }
+            }
+            
+            // Create left character
+            const leftCharacterGeometry = new THREE.BoxGeometry(0.6, 0.6, 0.6);
+            leftCharacter = new THREE.Mesh(leftCharacterGeometry, leftCharacterMaterial);
+            leftCharacter.position.set(leftStartPos.x, 0, leftStartPos.z);
+            
+            // Add a direction indicator (nose)
+            const noseGeometry = new THREE.BoxGeometry(0.2, 0.2, 0.4);
+            const nose = new THREE.Mesh(noseGeometry, leftCharacterMaterial);
+            nose.position.set(0, 0, 0.4); // Nose sticks out in z direction
+            leftCharacter.add(nose);
+            
+            // Add to scene
+            leftScene.add(leftCharacter);
+            
+            // Create right character
+            const rightCharacterGeometry = new THREE.BoxGeometry(0.6, 0.6, 0.6);
+            rightCharacter = new THREE.Mesh(rightCharacterGeometry, rightCharacterMaterial);
+            rightCharacter.position.set(rightStartPos.x, 0, rightStartPos.z);
+            
+            // Add a direction indicator (nose)
+            const rightNoseGeometry = new THREE.BoxGeometry(0.2, 0.2, 0.4);
+            const rightNose = new THREE.Mesh(rightNoseGeometry, rightCharacterMaterial);
+            rightNose.position.set(0, 0, 0.4); // Nose sticks out in z direction
+            rightCharacter.add(rightNose);
+            
+            // Add to scene
+            rightScene.add(rightCharacter);
+            
+            // Set up character properties
+            leftCharacter.userData = {
+                velocity: new THREE.Vector3(0, 0, 0),
+                direction: new THREE.Vector3(0, 0, 1),
+                rotationSpeed: 0.1,
+                moveSpeed: 0.1,
+                isJumping: false
+            };
+            
+            rightCharacter.userData = {
+                velocity: new THREE.Vector3(0, 0, 0),
+                direction: new THREE.Vector3(0, 0, 1),
+                rotationSpeed: 0.1,
+                moveSpeed: 0.1,
+                isJumping: false
+            };
+        }
+        
+        // Add a trap to the level
+        function addTrap(trapConfig) {
+            const scene = trapConfig.side === "left" ? leftScene : rightScene;
+            const x = trapConfig.position.x;
+            const z = trapConfig.position.y;
+            
+            let trapMesh;
+            
+            switch(trapConfig.type) {
+                case "blade":
+                    // Create spinning blade trap
+                    const bladeGeometry = new THREE.CylinderGeometry(0.4, 0.4, 0.1, 8);
+                    const bladeMaterial = new THREE.MeshPhongMaterial({ 
+                        color: 0xaaaaaa,
+                        specular: 0xffffff,
+                        shininess: 100
+                    });
+                    
+                    trapMesh = new THREE.Mesh(bladeGeometry, bladeMaterial);
+                    trapMesh.rotation.x = Math.PI / 2; // Make it flat
+                    trapMesh.position.set(x, -0.2, z);
+                    
+                    // Add blade edges
+                    const edgeGeometry = new THREE.BoxGeometry(0.8, 0.05, 0.2);
+                    const edgeMaterial = new THREE.MeshPhongMaterial({ 
+                        color: 0xcc0000,
+                        specular: 0xff6666,
+                        shininess: 100 
+                    });
+                    
+                    const edge1 = new THREE.Mesh(edgeGeometry, edgeMaterial);
+                    edge1.position.set(0, 0, 0);
+                    trapMesh.add(edge1);
+                    
+                    const edge2 = new THREE.Mesh(edgeGeometry, edgeMaterial);
+                    edge2.position.set(0, 0, 0);
+                    edge2.rotation.y = Math.PI / 2;
+                    trapMesh.add(edge2);
+                    
+                    scene.add(trapMesh);
+                    
+                    // Add to active traps
+                    activeTraps.push({
+                        side: trapConfig.side,
+                        type: trapConfig.type,
+                        position: { x, z },
+                        mesh: trapMesh,
+                        timing: trapConfig.timing,
+                        timeOffset: Math.random() * trapConfig.timing,
+                        active: false
+                    });
+                    break;
+                    
+                case "lava":
+                    // Create lava pit
+                    const lavaGeometry = new THREE.BoxGeometry(1, 0.1, 1);
+                    const lavaMaterial = new THREE.MeshPhongMaterial({
+                        color: 0xff6600,
+                        emissive: 0xcc3300,
+                        specular: 0xffaa66,
+                        shininess: 100
+                    });
+                    
+                    trapMesh = new THREE.Mesh(lavaGeometry, lavaMaterial);
+                    trapMesh.position.set(x, -0.45, z);
+                    scene.add(trapMesh);
+                    
+                    // Add to active traps
+                    activeTraps.push({
+                        side: trapConfig.side,
+                        type: trapConfig.type,
+                        position: { x, z },
+                        mesh: trapMesh
+                    });
+                    break;
+                    
+                case "fake_exit":
+                    // Already created in buildMaze
+                    activeTraps.push({
+                        side: trapConfig.side,
+                        type: trapConfig.type,
+                        position: { x, z }
+                    });
+                    break;
+            }
+        }
+        
+        // Add a button and associated door
+        function addButton(buttonConfig) {
+            const scene = buttonConfig.side === "left" ? leftScene : rightScene;
+            const x = buttonConfig.position.x;
+            const z = buttonConfig.position.y;
+            
+            // Create button
+            const buttonBaseGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.1, 16);
+            const buttonBaseMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x333333,
+                specular: 0x666666,
+                shininess: 30
+            });
+            
+            const buttonBase = new THREE.Mesh(buttonBaseGeometry, buttonBaseMaterial);
+            buttonBase.position.set(x, -0.45, z);
+            scene.add(buttonBase);
+            
+            const buttonTopGeometry = new THREE.CylinderGeometry(0.2, 0.2, 0.05, 16);
+            const buttonTopMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0xff0000,
+                emissive: 0x660000,
+                specular: 0xff6666,
+                shininess: 50
+            });
+            
+            const buttonTop = new THREE.Mesh(buttonTopGeometry, buttonTopMaterial);
+            buttonTop.position.set(0, 0.075, 0);
+            buttonBase.add(buttonTop);
+            
+            // Add to active buttons
+            activeButtons.push({
+                side: buttonConfig.side,
+                position: { x, z },
+                mesh: buttonBase,
+                doorSide: buttonConfig.doorSide,
+                doorPosition: buttonConfig.doorPosition,
+                timer: buttonConfig.timer,
+                isPressed: false
+            });
+        }
+        
+        // Add a moving platform
+        function addPlatform(platformConfig) {
+            const scene = platformConfig.side === "left" ? leftScene : rightScene;
+            const startX = platformConfig.startPosition.x;
+            const startZ = platformConfig.startPosition.y;
+            const endX = platformConfig.endPosition.x;
+            const endZ = platformConfig.endPosition.y;
+            
+            // Create platform
+            const platformGeometry = new THREE.BoxGeometry(1, 0.2, 1);
+            const platformMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x66aaff,
+                specular: 0xaaccff,
+                shininess: 50
+            });
+            
+            const platform = new THREE.Mesh(platformGeometry, platformMaterial);
+            platform.position.set(startX, -0.3, startZ);
+            scene.add(platform);
+            
+            // Add to active platforms
+            activePlatforms.push({
+                side: platformConfig.side,
+                mesh: platform,
+                startPosition: { x: startX, z: startZ },
+                endPosition: { x: endX, z: endZ },
+                currentPosition: { x: startX, z: startZ },
+                speed: platformConfig.speed,
+                direction: platformConfig.direction,
+                progress: 0
+            });
+        }
+        
+        // Update character positions based on input
+        function updateCharacters() {
+            if (!gameState.isPlaying) return;
+            
+            // Character physics constants
+            const friction = 0.9;
+            const gravity = 0.01;
+            const jumpForce = 0.2;
+            
+            // Handle input for left character
+            if (keys.w) {
+                const moveX = leftCharacter.userData.direction.x * leftCharacter.userData.moveSpeed;
+                const moveZ = leftCharacter.userData.direction.z * leftCharacter.userData.moveSpeed;
+                leftCharacter.userData.velocity.x += moveX;
+                leftCharacter.userData.velocity.z += moveZ;
+            }
+            
+            if (keys.s) {
+                const moveX = -leftCharacter.userData.direction.x * leftCharacter.userData.moveSpeed;
+                const moveZ = -leftCharacter.userData.direction.z * leftCharacter.userData.moveSpeed;
+                leftCharacter.userData.velocity.x += moveX;
+                leftCharacter.userData.velocity.z += moveZ;
+            }
+            
+            if (keys.a) {
+                leftCharacter.rotation.y += leftCharacter.userData.rotationSpeed;
+                updateDirection(leftCharacter);
+            }
+            
+            if (keys.d) {
+                leftCharacter.rotation.y -= leftCharacter.userData.rotationSpeed;
+                updateDirection(leftCharacter);
+            }
+            
+            if (keys.space && !leftCharacter.userData.isJumping) {
+                leftCharacter.userData.velocity.y = jumpForce;
+                leftCharacter.userData.isJumping = true;
+            }
+            
+            // Handle mirrored input for right character
+            if (keys.w) {
+                const moveX = rightCharacter.userData.direction.x * rightCharacter.userData.moveSpeed;
+                const moveZ = rightCharacter.userData.direction.z * rightCharacter.userData.moveSpeed;
+                rightCharacter.userData.velocity.x += moveX;
+                rightCharacter.userData.velocity.z += moveZ;
+            }
+            
+            if (keys.s) {
+                const moveX = -rightCharacter.userData.direction.x * rightCharacter.userData.moveSpeed;
+                const moveZ = -rightCharacter.userData.direction.z * rightCharacter.userData.moveSpeed;
+                rightCharacter.userData.velocity.x += moveX;
+                rightCharacter.userData.velocity.z += moveZ;
+            }
+            
+            // Mirror the rotation for right character
+            if (keys.a) {
+                rightCharacter.rotation.y -= rightCharacter.userData.rotationSpeed; // Mirrored!
+                updateDirection(rightCharacter);
+            }
+            
+            if (keys.d) {
+                rightCharacter.rotation.y += rightCharacter.userData.rotationSpeed; // Mirrored!
+                updateDirection(rightCharacter);
+            }
+            
+            if (keys.space && !rightCharacter.userData.isJumping) {
+                rightCharacter.userData.velocity.y = jumpForce;
+                rightCharacter.userData.isJumping = true;
+            }
+            
+            // Apply physics
+            applyPhysics(leftCharacter);
+            applyPhysics(rightCharacter);
+            
+            // Check for collisions
+            checkCollisions(leftCharacter, "left");
+            checkCollisions(rightCharacter, "right");
+            
+            // Check button presses
+            checkButtons();
+            
+            // Check exits
+            checkExits();
+        }
+        
+        // Update character direction vector based on rotation
+        function updateDirection(character) {
+            const angle = character.rotation.y;
+            character.userData.direction.x = Math.sin(angle);
+            character.userData.direction.z = Math.cos(angle);
+        }
+        
+        // Apply physics to character
+        function applyPhysics(character) {
+            // Apply gravity
+            if (character.position.y > 0) {
+                character.userData.velocity.y -= 0.01;
+            } else if (character.position.y < 0) {
+                character.position.y = 0;
+                character.userData.velocity.y = 0;
+                character.userData.isJumping = false;
+            }
+            
+            // Apply friction
+            character.userData.velocity.x *= 0.9;
+            character.userData.velocity.z *= 0.9;
+            
+            // Apply velocity
+            character.position.x += character.userData.velocity.x;
+            character.position.y += character.userData.velocity.y;
+            character.position.z += character.userData.velocity.z;
+        }
+        
+        // Check for collisions
+        function checkCollisions(character, side) {
+            const level = levels[gameState.level - 1];
+            const maze = side === "left" ? level.leftMaze : level.rightMaze;
+            
+            // Get character position in grid coordinates
+            const charX = Math.round(character.position.x);
+            const charZ = Math.round(character.position.z);
+            
+            // Wall collision detection - stronger boundaries
+            for (let z = Math.floor(character.position.z - 1); z <= Math.ceil(character.position.z + 1); z++) {
+                for (let x = Math.floor(character.position.x - 1); x <= Math.ceil(character.position.x + 1); x++) {
+                    // Check if position is valid
+                    if (z >= 0 && z < maze.length && x >= 0 && x < maze[z].length) {
+                        // Wall collision
+                        if (maze[z][x] === 'X') {
+                            // Calculate distance between character and wall center
+                            const dx = character.position.x - x;
+                            const dz = character.position.z - z;
+                            const distance = Math.sqrt(dx * dx + dz * dz);
+                            
+                            // If too close, push away with stronger force
+                            if (distance < 0.9) {
+                                const pushX = dx / distance * (0.9 - distance) * 1.5;
+                                const pushZ = dz / distance * (0.9 - distance) * 1.5;
+                                
+                                character.position.x += pushX;
+                                character.position.z += pushZ;
+                                
+                                // Reset velocity to prevent wall clipping
+                                if (Math.abs(dx) > Math.abs(dz)) {
+                                    character.userData.velocity.x = 0;
+                                } else {
+                                    character.userData.velocity.z = 0;
+                                }
+                            }
+                        }
+                        
+                        // Door collision (only if door is closed)
+                        if (maze[z][x] === 'D') {
+                            // Find the door in activeDoors
+                            const door = activeDoors.find(d => 
+                                d.side === side && 
+                                d.position.x === x && 
+                                d.position.z === z
+                            );
+                            
+                            // If door is closed, treat as wall with stronger boundaries
+                            if (door && !door.isOpen) {
+                                // Calculate distance
+                                const dx = character.position.x - x;
+                                const dz = character.position.z - z;
+                                const distance = Math.sqrt(dx * dx + dz * dz);
+                                
+                                // If too close, push away with stronger force
+                                if (distance < 0.9) {
+                                    const pushX = dx / distance * (0.9 - distance) * 1.5;
+                                    const pushZ = dz / distance * (0.9 - distance) * 1.5;
+                                    
+                                    character.position.x += pushX;
+                                    character.position.z += pushZ;
+                                    
+                                    // Reset velocity to prevent door clipping
+                                    if (Math.abs(dx) > Math.abs(dz)) {
+                                        character.userData.velocity.x = 0;
+                                    } else {
+                                        character.userData.velocity.z = 0;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Add additional boundary check for maze edges
+            const mazeWidth = maze[0].length;
+            const mazeHeight = maze.length;
+            
+            // Enforce maze boundaries
+            if (character.position.x < 0) {
+                character.position.x = 0;
+                character.userData.velocity.x = 0;
+            }
+            if (character.position.x > mazeWidth - 1) {
+                character.position.x = mazeWidth - 1;
+                character.userData.velocity.x = 0;
+            }
+            if (character.position.z < 0) {
+                character.position.z = 0;
+                character.userData.velocity.z = 0;
+            }
+            if (character.position.z > mazeHeight - 1) {
+                character.position.z = mazeHeight - 1;
+                character.userData.velocity.z = 0;
+            }
+            
+            // Check for trap collisions
+            activeTraps.forEach(trap => {
+                if (trap.side === side) {
+                    const trapX = trap.position.x;
+                    const trapZ = trap.position.z;
+                    
+                    // Distance to trap
+                    const dx = character.position.x - trapX;
+                    const dz = character.position.z - trapZ;
+                    const distance = Math.sqrt(dx * dx + dz * dz);
+                    
+                    // Check if character is on trap
+                    if (distance < 0.5) {
+                        // For blade traps, only kill if active
+                        if (trap.type === "blade") {
+                            if (trap.active) {
+                                killCharacter(side);
+                            }
+                        } 
+                        // Lava and fake exits always kill
+                        else {
+                            killCharacter(side);
+                        }
+                    }
+                }
+            });
+            
+            // Check for platform collisions
+            activePlatforms.forEach(platform => {
+                if (platform.side === side) {
+                    const platformX = platform.mesh.position.x;
+                    const platformZ = platform.mesh.position.z;
+                    
+                    // Distance to platform
+                    const dx = character.position.x - platformX;
+                    const dz = character.position.z - platformZ;
+                    const distance = Math.sqrt(dx * dx + dz * dz);
+                    
+                    // Check if character is on platform
+                    if (distance < 0.7 && character.position.y <= 0.2) {
+                        // Attach character to platform
+                        character.position.x = platformX;
+                        character.position.z = platformZ;
+                    }
+                }
+            });
+        }
+        
+        // Check button presses
+        function checkButtons() {
+            activeButtons.forEach(button => {
+                // Get character for this side
+                const character = button.side === "left" ? leftCharacter : rightCharacter;
+                
+                // Distance to button
+                const dx = character.position.x - button.position.x;
+                const dz = character.position.z - button.position.z;
+                const distance = Math.sqrt(dx * dx + dz * dz);
+                
+                // Check if character is on button
+                if (distance < 0.5) {
+                    // Button pressed
+                    button.isPressed = true;
+                    
+                    // Find door to open
+                    const door = activeDoors.find(d => 
+                        d.side === button.doorSide && 
+                        d.position.x === button.doorPosition.x && 
+                        d.position.z === button.doorPosition.y
+                    );
+                    
+                    if (door) {
+                        door.isOpen = true;
+                        door.timer = button.timer;
+                        door.mesh.material.opacity = 0.3;
+                    }
+                } else {
+                    button.isPressed = false;
+                }
+            });
+        }
+        
+        // Check if character has reached exit
+        function checkExits() {
+            // Get exits from level
+            const level = levels[gameState.level - 1];
+            let leftExit, rightExit;
+            
+            // Find exit positions in mazes
+            for (let z = 0; z < level.leftMaze.length; z++) {
+                for (let x = 0; x < level.leftMaze[z].length; x++) {
+                    if (level.leftMaze[z][x] === 'E') {
+                        leftExit = { x, z };
+                    }
+                    
+                    if (level.rightMaze[z][x] === 'E') {
+                        rightExit = { x, z };
+                    }
+                }
+            }
+            
+            // Check if left character has reached exit
+            const leftDX = leftCharacter.position.x - leftExit.x;
+            const leftDZ = leftCharacter.position.z - leftExit.z;
+            const leftDistance = Math.sqrt(leftDX * leftDX + leftDZ * leftDZ);
+            
+            if (leftDistance < 0.5 && !gameState.leftCharacterAtExit) {
+                gameState.leftCharacterAtExit = true;
+                
+                // Start timer if right character not at exit
+                if (!gameState.rightCharacterAtExit) {
+                    gameState.exitSyncTimer = setTimeout(() => {
+                        showMessage("Left character exited too early!");
+                        setTimeout(() => resetLevel(), 2000);
+                    }, 1000); // 1 second timeout
+                }
+                // If right character already at exit, both have reached
+                else {
+                    clearTimeout(gameState.exitSyncTimer);
+                    completeLevel();
+                }
+            }
+            
+            // Check if right character has reached exit
+            const rightDX = rightCharacter.position.x - rightExit.x;
+            const rightDZ = rightCharacter.position.z - rightExit.z;
+            const rightDistance = Math.sqrt(rightDX * rightDX + rightDZ * rightDZ);
+            
+            if (rightDistance < 0.5 && !gameState.rightCharacterAtExit) {
+                gameState.rightCharacterAtExit = true;
+                
+                // Start timer if left character not at exit
+                if (!gameState.leftCharacterAtExit) {
+                    gameState.exitSyncTimer = setTimeout(() => {
+                        showMessage("Right character exited too early!");
+                        setTimeout(() => resetLevel(), 2000);
+                    }, 1000); // 1 second timeout
+                }
+                // If left character already at exit, both have reached
+                else {
+                    clearTimeout(gameState.exitSyncTimer);
+                    completeLevel();
+                }
+            }
+        }
+        
+        // Kill character and reset level
+        function killCharacter(side) {
+            gameState.deathCount++;
+            updateUI();
+            
+            // Show mocking message
+            const message = mockMessages[Math.floor(Math.random() * mockMessages.length)];
+            showMessage(message);
+            
+            // Reset level after delay
+            setTimeout(() => resetLevel(), 2000);
+        }
+        
+        // Reset the current level
+        function resetLevel() {
+            // Clear timeout if active
+            if (gameState.exitSyncTimer) {
+                clearTimeout(gameState.exitSyncTimer);
+                gameState.exitSyncTimer = null;
+            }
+            
+            // Hide message
+            hideMessage();
+            
+            // Reset character positions
+            loadLevel(gameState.level);
+        }
+        
+        // Complete the current level
+        function completeLevel() {
+            // Show completion message
+            showMessage("Level complete! Both characters reached the exit in sync.");
+            
+            // Show level complete screen after delay
+            setTimeout(() => {
+                document.getElementById('levelCompleteScreen').style.display = 'flex';
+                
+                // Set completion message
+                const message = `You completed Level ${gameState.level}: ${levels[gameState.level - 1].name}.\n${gameState.deathCount > 0 ? `Deaths: ${gameState.deathCount}` : 'Perfect run! No deaths!'}`;
+                document.getElementById('levelCompleteMessage').textContent = message;
+            }, 2000);
+        }
+        
+        // Show message
+        function showMessage(text) {
+            const messageBox = document.getElementById('messageBox');
+            messageBox.textContent = text;
+            messageBox.style.display = 'block';
+        }
+        
+        // Hide message
+        function hideMessage() {
+            document.getElementById('messageBox').style.display = 'none';
+        }
+        
+        // Update UI elements
+        function updateUI() {
+            document.getElementById('levelIndicator').textContent = `Level: ${gameState.level} - ${levels[gameState.level - 1].name}`;
+            document.getElementById('deathCount').textContent = `Deaths: ${gameState.deathCount}`;
+        }
+        
+        // Update traps
+        function updateTraps() {
+            activeTraps.forEach(trap => {
+                if (trap.type === "blade") {
+                    // Rotate blade
+                    trap.mesh.rotation.z += 0.1;
+                    
+                    // Update activity based on timing
+                    const time = (Date.now() / 1000) % trap.timing;
+                    trap.active = time < trap.timing / 2; // Active for half of cycle
+                    
+                    // Update appearance
+                    if (trap.active) {
+                        trap.mesh.scale.set(1, 1, 1); // Full size when active
+                    } else {
+                        trap.mesh.scale.set(0.8, 0.8, 0.8); // Smaller when inactive
+                    }
+                }
+            });
+        }
+        
+        // Update doors
+        function updateDoors() {
+            activeDoors.forEach(door => {
+                if (door.isOpen) {
+                    // Lower timer
+                    door.timer -= 1/60;
+                    
+                    // Close door if timer expired
+                    if (door.timer <= 0) {
+                        door.isOpen = false;
+                        door.mesh.material.opacity = 0.8;
+                    }
+                }
+            });
+        }
+        
+        // Update platforms
+        function updatePlatforms() {
+            activePlatforms.forEach(platform => {
+                // Update progress
+                platform.progress += platform.speed * platform.direction;
+                
+                // Reverse direction at endpoints
+                if (platform.progress <= 0 || platform.progress >= 1) {
+                    platform.direction *= -1;
+                }
+                
+                // Clamp progress
+                platform.progress = Math.max(0, Math.min(1, platform.progress));
+                
+                // Interpolate position
+                const newX = platform.startPosition.x + (platform.endPosition.x - platform.startPosition.x) * platform.progress;
+                const newZ = platform.startPosition.z + (platform.endPosition.z - platform.startPosition.z) * platform.progress;
+                
+                // Update mesh position
+                platform.mesh.position.set(newX, -0.3, newZ);
+                platform.currentPosition.x = newX;
+                platform.currentPosition.z = newZ;
+            });
+        }
+        
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            // Update game elements
+            if (gameState.isPlaying) {
+                updateCharacters();
+                updateTraps();
+                updateDoors();
+                updatePlatforms();
+                
+                // Update camera positions to follow characters
+                leftCamera.position.set(
+                    leftCharacter.position.x,
+                    8,
+                    leftCharacter.position.z + 5
+                );
+                leftCamera.lookAt(leftCharacter.position);
+                
+                rightCamera.position.set(
+                    rightCharacter.position.x,
+                    8,
+                    rightCharacter.position.z + 5
+                );
+                rightCamera.lookAt(rightCharacter.position);
+            }
+            
+            // Render scenes
+            leftRenderer.render(leftScene, leftCamera);
+            rightRenderer.render(rightScene, rightCamera);
+        }
+        
+        // Initialize the game on load
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>

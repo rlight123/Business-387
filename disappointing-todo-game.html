@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Disappointing To-Do Game</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f0f0f0;
+      height: 100vh;
+      overflow: hidden;
+    }
+    #game-container {
+      position: relative;
+      width: 100%;
+      height: 100vh;
+      overflow: hidden;
+    }
+    #clock {
+      position: absolute;
+      background: rgba(26, 26, 26, 0.85);
+      color: #ff5050;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 4em;
+      user-select: none;
+      height: 120px;
+      width: 80%;
+      z-index: 10;
+      box-shadow: 0 0 15px rgba(0,0,0,0.5);
+      transform: rotate(-25deg) translateX(-10%) translateY(60%);
+      pointer-events: none; /* This makes the clock not capture clicks */
+    }
+    #clock::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(255,80,80,0.5), transparent);
+      animation: scanline 4s linear infinite;
+    }
+    @keyframes scanline {
+      0% { top: -5px; }
+      100% { top: 100%; }
+    }
+    #game {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      padding: 1em;
+      background: #f9f9f9;
+      overflow-y: auto;
+      box-sizing: border-box;
+      z-index: 5;
+    }
+    .tabs {
+      display: flex;
+      margin-bottom: 1em;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      overflow: hidden;
+      position: relative;
+      z-index: 15; /* Above the clock */
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 0.8em;
+      background: white;
+      color: #666;
+      border: none;
+      font-weight: bold;
+      transition: all 0.3s ease;
+      border-bottom: 3px solid transparent;
+      position: relative;
+      z-index: 15;
+    }
+    .tab-btn:hover {
+      background: #f5f5f5;
+      transform: none;
+    }
+    .tab-btn.active {
+      color: #4a90e2;
+      border-bottom: 3px solid #4a90e2;
+      background: #f5f5f5;
+    }
+    .tab-content {
+      display: none;
+      position: relative;
+      z-index: 15; /* Above the clock */
+    }
+    .tab-content.active {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+    .section {
+      margin-bottom: 2em;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 1em;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      transition: all 0.3s ease;
+      position: relative;
+      z-index: 15; /* Above the clock */
+    }
+    .section:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+      background: rgba(255, 255, 255, 0.95);
+    }
+    h2 {
+      margin-bottom: 0.5em;
+      display: flex;
+      align-items: center;
+      color: #333;
+    }
+    ul {
+      list-style: none;
+      padding-left: 0;
+      margin-top: 1em;
+      background: rgba(255, 255, 255, 0.85);
+      border-radius: 5px;
+    }
+    li {
+      padding: 0.5em;
+      display: flex;
+      align-items: center;
+      border-bottom: 1px solid #eee;
+      animation: fadeIn 0.3s ease;
+      position: relative;
+      z-index: 20;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    li:hover {
+      background: #f5f5f5;
+    }
+    li input[type="checkbox"] {
+      margin-right: 0.8em;
+      transform: scale(1.2);
+      cursor: pointer;
+    }
+    .completed {
+      text-decoration: line-through;
+      color: #888;
+    }
+    input[type="text"] {
+      width: 80%;
+      padding: 0.5em;
+      margin-right: 0.5em;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 1em;
+      position: relative;
+      z-index: 20;
+      background: white;
+    }
+    button {
+      padding: 0.5em 0.8em;
+      cursor: pointer;
+      background: #4a90e2;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 0.9em;
+      transition: all 0.2s ease;
+      position: relative;
+      z-index: 20;
+    }
+    button:hover {
+      background: #357ae8;
+      transform: scale(1.05);
+    }
+    .deleteBtn {
+      margin-left: auto;
+      background: #ff5050;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-size: 0.8em;
+      opacity: 0.6;
+      transition: opacity 0.2s;
+    }
+    .deleteBtn:hover {
+      opacity: 1;
+    }
+    #stats {
+      background: #333;
+      color: white;
+      padding: 1em;
+      margin-top: auto;
+      border-radius: 8px;
+      text-align: center;
+      position: relative;
+      z-index: 15;
+    }
+    .progress-container {
+      height: 10px;
+      background: #555;
+      border-radius: 5px;
+      margin-top: 8px;
+      overflow: hidden;
+    }
+    #progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #4a90e2, #57d9a3);
+      width: 0%;
+      transition: width 0.5s ease;
+    }
+    .motivation {
+      font-style: italic;
+      margin-top: 0.5em;
+      color: #aaa;
+      font-size: 0.9em;
+    }
+    #notification {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #ff5050;
+      color: white;
+      padding: 1em;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.3s ease;
+      z-index: 100;
+    }
+    #notification.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container">
+    <div id="clock">99:99</div>
+    <div id="game">
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('todo')">📝 To-Do</button>
+        <button class="tab-btn" onclick="switchTab('daily')">🗓 Daily Goals</button>
+        <button class="tab-btn" onclick="switchTab('project')">📦 Project Planner</button>
+        <button class="tab-btn" onclick="switchTab('event')">🎉 Events</button>
+      </div>
+      
+      <div id="todo-section" class="tab-content active">
+        <div class="section">
+          <h2>📝 To-Do List</h2>
+          <input id="todoInput" type="text" placeholder="Add a to-do item">
+          <button onclick="addItem('todo')">Add</button>
+          <ul id="todoList"></ul>
+        </div>
+      </div>
+      
+      <div id="daily-section" class="tab-content">
+        <div class="section">
+          <h2>🗓 Daily Goals</h2>
+          <input id="dailyInput" type="text" placeholder="Add a daily goal">
+          <button onclick="addItem('daily')">Add</button>
+          <ul id="dailyList"></ul>
+        </div>
+      </div>
+      
+      <div id="project-section" class="tab-content">
+        <div class="section">
+          <h2>📦 Project Planner</h2>
+          <input id="projectInput" type="text" placeholder="Add a project task">
+          <button onclick="addItem('project')">Add</button>
+          <ul id="projectList"></ul>
+        </div>
+      </div>
+      
+      <div id="event-section" class="tab-content">
+        <div class="section">
+          <h2>🎉 Events</h2>
+          <input id="eventInput" type="text" placeholder="Add an event">
+          <button onclick="addItem('event')">Add</button>
+          <ul id="eventList"></ul>
+        </div>
+      </div>
+      
+      <div id="stats">
+        <div>Tasks Completed: <span id="completed-count">0</span>/<span id="total-count">0</span></div>
+        <div class="progress-container">
+          <div id="progress-bar"></div>
+        </div>
+        <div class="motivation" id="motivation">You're doing... something.</div>
+      </div>
+    </div>
+  </div>
+  
+  <div id="notification">This clock might not be accurate...</div>
+  
+  <script>
+    let completedTasks = 0;
+    let totalTasks = 0;
+    const motivationalMessages = [
+      "You're doing... something.",
+      "Is this really the best use of your time?",
+      "At least you're trying.",
+      "Maybe tomorrow will be better.",
+      "You could be watching TV instead.",
+      "Remember when you had dreams?",
+      "This list keeps getting longer, doesn't it?",
+      "Don't worry, nobody expected much anyway.",
+      "You're almost not behind schedule!",
+      "Have you considered just giving up?"
+    ];
+    
+    // Function to switch between tabs
+    function switchTab(tabName) {
+      // Hide all tab content
+      const tabContents = document.querySelectorAll('.tab-content');
+      tabContents.forEach(content => {
+        content.classList.remove('active');
+      });
+      
+      // Deactivate all tab buttons
+      const tabButtons = document.querySelectorAll('.tab-btn');
+      tabButtons.forEach(button => {
+        button.classList.remove('active');
+      });
+      
+      // Show the selected tab content
+      document.getElementById(tabName + '-section').classList.add('active');
+      
+      // Activate the selected tab button
+      const activeButton = Array.from(tabButtons).find(button => 
+        button.textContent.toLowerCase().includes(tabName.toLowerCase())
+      );
+      if (activeButton) {
+        activeButton.classList.add('active');
+      }
+      
+      // Maybe sometimes switch to a random tab
+      if (Math.random() < 0.05) { // 5% chance
+        setTimeout(() => {
+          const tabs = ['todo', 'daily', 'project', 'event'];
+          const randomTab = tabs[Math.floor(Math.random() * tabs.length)];
+          if (randomTab !== tabName) {
+            switchTab(randomTab);
+            showNotification("Oops, wrong tab!");
+          }
+        }, Math.random() * 3000 + 2000); // Between 2-5 seconds later
+      }
+    }
+    
+    function addItem(type) {
+      const input = document.getElementById(type + 'Input');
+      const list = document.getElementById(type + 'List');
+      const value = input.value.trim();
+      if (value === '') return;
+      
+      const li = document.createElement('li');
+      
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.addEventListener('change', function() {
+        if (this.checked) {
+          li.classList.add('completed');
+          completedTasks++;
+          
+          // Random chance the task gets unchecked
+          if (Math.random() < 0.2) { // 20% chance
+            setTimeout(() => {
+              this.checked = false;
+              li.classList.remove('completed');
+              completedTasks--;
+              updateStats();
+              showNotification("Hmm, did you really finish that?");
+            }, Math.random() * 10000 + 5000); // Between 5-15 seconds later
+          }
+        } else {
+          li.classList.remove('completed');
+          completedTasks--;
+        }
+        updateStats();
+      });
+      
+      li.appendChild(checkbox);
+      
+      const span = document.createElement('span');
+      span.textContent = value;
+      li.appendChild(span);
+      
+      const deleteBtn = document.createElement('button');
+      deleteBtn.textContent = '×';
+      deleteBtn.className = 'deleteBtn';
+      deleteBtn.addEventListener('click', function() {
+        // 30% chance it doesn't delete
+        if (Math.random() < 0.3) {
+          showNotification("Delete failed... try again?");
+          return;
+        }
+        
+        if (li.classList.contains('completed')) {
+          completedTasks--;
+        }
+        totalTasks--;
+        list.removeChild(li);
+        updateStats();
+      });
+      li.appendChild(deleteBtn);
+      
+      list.appendChild(li);
+      input.value = '';
+      
+      totalTasks++;
+      updateStats();
+      
+      // Sometimes add a random task
+      if (Math.random() < 0.2 && totalTasks > 3) { // 20% chance if more than 3 tasks
+        setTimeout(() => {
+          addRandomTask();
+        }, Math.random() * 15000 + 10000); // Between 10-25 seconds later
+      }
+    }
+    
+    function addRandomTask() {
+      const randomTasks = [
+        "Remember to breathe",
+        "Question your life choices",
+        "Stare at wall for 5 minutes",
+        "Check email for no reason",
+        "Worry about that thing",
+        "Think about calling your parents",
+        "Consider a career change",
+        "Organize desk (but not really)",
+        "Start a hobby you'll abandon",
+        "Make another to-do list"
+      ];
+      
+      const types = ['todo', 'daily', 'project', 'event'];
+      const randomType = types[Math.floor(Math.random() * types.length)];
+      const randomTask = randomTasks[Math.floor(Math.random() * randomTasks.length)];
+      
+      const list = document.getElementById(randomType + 'List');
+      const li = document.createElement('li');
+      
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.addEventListener('change', function() {
+        if (this.checked) {
+          li.classList.add('completed');
+          completedTasks++;
+        } else {
+          li.classList.remove('completed');
+          completedTasks--;
+        }
+        updateStats();
+      });
+      
+      li.appendChild(checkbox);
+      
+      const span = document.createElement('span');
+      span.textContent = randomTask;
+      li.appendChild(span);
+      
+      const deleteBtn = document.createElement('button');
+      deleteBtn.textContent = '×';
+      deleteBtn.className = 'deleteBtn';
+      deleteBtn.addEventListener('click', function() {
+        if (li.classList.contains('completed')) {
+          completedTasks--;
+        }
+        totalTasks--;
+        list.removeChild(li);
+        updateStats();
+      });
+      li.appendChild(deleteBtn);
+      
+      list.appendChild(li);
+      totalTasks++;
+      updateStats();
+      
+      showNotification("New task added automatically!");
+    }
+    
+    function updateStats() {
+      document.getElementById('completed-count').textContent = completedTasks;
+      document.getElementById('total-count').textContent = totalTasks;
+      
+      const progressPercentage = totalTasks === 0 ? 0 : (completedTasks / totalTasks) * 100;
+      document.getElementById('progress-bar').style.width = `${progressPercentage}%`;
+      
+      // Update motivation message
+      const randomIndex = Math.floor(Math.random() * motivationalMessages.length);
+      document.getElementById('motivation').textContent = motivationalMessages[randomIndex];
+    }
+    
+    function updateIncorrectClock() {
+      const clock = document.getElementById('clock');
+      
+      // More chaotic time display
+      if (Math.random() < 0.1) { // 10% chance of nonsense time
+        clock.textContent = `${Math.floor(Math.random() * 99)}:${Math.floor(Math.random() * 99)}`;
+      } else {
+        const offsetMinutes = Math.floor(Math.random() * 300) - 150; // Random offset from -150 to +150 mins
+        const now = new Date();
+        now.setMinutes(now.getMinutes() + offsetMinutes);
+        
+        let hours = now.getHours();
+        let minutes = now.getMinutes();
+        
+        // Randomly flip hours and minutes sometimes
+        if (Math.random() < 0.05) { // 5% chance
+          [hours, minutes] = [minutes, hours];
+          showNotification("Time feels... inverted today.");
+        }
+        
+        hours = hours.toString().padStart(2, '0');
+        minutes = minutes.toString().padStart(2, '0');
+        
+        clock.textContent = `${hours}:${minutes}`;
+      }
+      
+      // Random glitch effect occasionally
+      if (Math.random() < 0.15) { // 15% chance
+        clock.style.transform = `skew(${Math.random() * 5 - 2.5}deg) rotate(-25deg) translateX(-10%) translateY(60%)`;
+        setTimeout(() => {
+          clock.style.transform = `rotate(-25deg) translateX(-10%) translateY(60%)`;
+        }, 1000);
+      }
+    }
+    
+    function showNotification(message) {
+      const notification = document.getElementById('notification');
+      notification.textContent = message;
+      notification.classList.add('show');
+      
+      setTimeout(() => {
+        notification.classList.remove('show');
+      }, 3000);
+    }
+    
+    // Update the "wrong" clock every 8-12 seconds (randomly)
+    function scheduleNextClockUpdate() {
+      const nextUpdate = Math.random() * 4000 + 8000; // Between 8-12 seconds
+      setTimeout(() => {
+        updateIncorrectClock();
+        scheduleNextClockUpdate();
+      }, nextUpdate);
+    }
+    
+    // Initialize the game
+    window.onload = function() {
+      updateIncorrectClock();
+      scheduleNextClockUpdate();
+      
+      // Make sure the To-Do tab is selected by default
+      switchTab('todo');
+      
+      // Start random notifications after a delay
+      setTimeout(randomNotification, 20000);
+    };
+    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+      // Enter key to add task when input is focused
+      if (e.key === 'Enter') {
+        const activeElement = document.activeElement;
+        if (activeElement.id === 'todoInput') addItem('todo');
+        if (activeElement.id === 'dailyInput') addItem('daily');
+        if (activeElement.id === 'projectInput') addItem('project');
+        if (activeElement.id === 'eventInput') addItem('event');
+      }
+    });
+    
+    // Random notifications
+    function randomNotification() {
+      const messages = [
+        "Are you still working on this?",
+        "Time's ticking... or is it?",
+        "I think you forgot something important.",
+        "Have you checked the clock lately?",
+        "Your productivity is... interesting.",
+        "Maybe take a break? Or don't. It probably won't help.",
+        "You're doing great! Just kidding.",
+        "Is this list getting longer or shorter?",
+        "Task completion seems arbitrary, doesn't it?",
+        "Did you notice some tasks disappeared? Or did they?"
+      ];
+      
+      const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+      showNotification(randomMessage);
+      
+      // Schedule next random notification
+      const nextNotification = Math.random() * 60000 + 30000; // Between 30-90 seconds
+      setTimeout(randomNotification, nextNotification);
+    }
+  </script>
+      
+      const span = document.createElement('span');
+      span.textContent = value;
+      li.appendChild(span);
+      
+      const deleteBtn = document.createElement('button');
+      deleteBtn.textContent = '×';
+      deleteBtn.className = 'deleteBtn';
+      deleteBtn.addEventListener('click', function() {
+        // 30% chance it doesn't delete
+        if (Math.random() < 0.3) {
+          showNotification("Delete failed... try again?");
+          return;
+        }
+        
+        if (li.classList.contains('completed')) {
+          completedTasks--;
+        }
+        totalTasks--;
+        list.removeChild(li);
+        updateStats();
+      });
+      li.appendChild(deleteBtn);
+      
+      list.appendChild(li);
+      input.value = '';
+      
+      totalTasks++;
+      updateStats();
+      
+      // Sometimes add a random task
+      if (Math.random() < 0.2 && totalTasks > 3) { // 20% chance if more than 3 tasks
+        setTimeout(() => {
+          addRandomTask();
+        }, Math.random() * 15000 + 10000); // Between 10-25 seconds later
+      }
+    }
+    
+    function addRandomTask() {
+      const randomTasks = [
+        "Remember to breathe",
+        "Question your life choices",
+        "Stare at wall for 5 minutes",
+        "Check email for no reason",
+        "Worry about that thing",
+        "Think about calling your parents",
+        "Consider a career change",
+        "Organize desk (but not really)",
+        "Start a hobby you'll abandon",
+        "Make another to-do list"
+      ];
+      
+      const types = ['todo', 'daily', 'project', 'event'];
+      const randomType = types[Math.floor(Math.random() * types.length)];
+      const randomTask = randomTasks[Math.floor(Math.random() * randomTasks.length)];
+      
+      const list = document.getElementById(randomType + 'List');
+      const li = document.createElement('li');
+      
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.addEventListener('change', function() {
+        if (this.checked) {
+          li.classList.add('completed');
+          completedTasks++;
+        } else {
+          li.classList.remove('completed');
+          completedTasks--;
+        }
+        updateStats();
+      });
+      
+      li.appendChild(checkbox);
+</body>
+</html>

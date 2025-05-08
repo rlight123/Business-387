@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self';">
+    <title>Notes App</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <div class="app-header">
+            <h1>Notes App</h1>
+            <div class="search-container">
+                <input type="text" id="search-notes" placeholder="Search notes...">
+            </div>
+        </div>
+        
+        <div class="main-content">
+            <div class="sidebar">
+                <button id="new-note-btn" class="primary-btn">+ New Note</button>
+                <div class="categories">
+                    <h3>Categories</h3>
+                    <ul id="categories-list">
+                        <li class="active" data-category="all">All Notes</li>
+                        <li data-category="favorites">Favorites</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="notes-container">
+                <div class="notes-input" id="note-form">
+                    <input type="text" id="note-title" placeholder="Title">
+                    <textarea id="note-content" placeholder="Take a note..."></textarea>
+                    <div class="button-container">
+                        <button id="cancel-note" class="secondary-btn">Cancel</button>
+                        <button id="add-note" class="primary-btn">Save Note</button>
+                    </div>
+                </div>
+                
+                <div class="notes-list" id="notes-list">
+                    <!-- Notes will be added here by JavaScript -->
+                </div>
+            </div>
+        </div>
+        
+        <div class="status-bar">
+            <span id="notes-count">0 notes</span>
+            <span id="app-version">v1.0.0</span>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

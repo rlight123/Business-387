@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Dashboard</h1>
+        
+        <div class="dashboard-buttons">
+            <div class="dashboard-button" id="todo-button">
+                <div class="icon">📝</div>
+                <div class="label">Todo List</div>
+            </div>
+            
+            <div class="dashboard-button" id="notes-button">
+                <div class="icon">📓</div>
+                <div class="label">Notes</div>
+            </div>
+            
+            <div class="dashboard-button" id="weather-button">
+                <div class="icon">🌤️</div>
+                <div class="label">Weather</div>
+            </div>
+        </div>
+        
+        <div class="dashboard-content">
+            <div id="todo-content" class="content-section">
+                <h2>Todo List</h2>
+                <div class="todo-app">
+                    <div class="todo-input">
+                        <input type="text" id="task-input" placeholder="Add a new task...">
+                        <button id="add-task-btn">Add</button>
+                    </div>
+                    <div class="filters">
+                        <button class="filter-btn active" data-filter="all">All</button>
+                        <button class="filter-btn" data-filter="active">Active</button>
+                        <button class="filter-btn" data-filter="completed">Completed</button>
+                    </div>
+                    <ul id="todo-list">
+                        <!-- Tasks will be added here by JavaScript -->
+                    </ul>
+                    <div class="todo-stats">
+                        <span id="tasks-count">0 tasks left</span>
+                        <button id="clear-completed">Clear Completed</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="notes-content" class="content-section">
+                <h2>Notes</h2>
+                <div class="notes-app">
+                    <div class="notes-controls">
+                        <div class="search-notes">
+                            <input type="text" id="search-notes" placeholder="Search notes...">
+                        </div>
+                        <button id="new-note-btn" class="primary-btn">+ New Note</button>
+                    </div>
+                    
+                    <div class="notes-categories">
+                        <ul id="categories-list">
+                            <li class="active" data-category="all">All Notes</li>
+                            <li data-category="favorites">Favorites</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="notes-input" id="note-form">
+                        <input type="text" id="note-title" placeholder="Title">
+                        <textarea id="note-content" placeholder="Take a note..."></textarea>
+                        <div class="button-container">
+                            <button id="cancel-note" class="secondary-btn">Cancel</button>
+                            <button id="add-note" class="primary-btn">Save Note</button>
+                        </div>
+                    </div>
+                    
+                    <div class="notes-list" id="notes-list">
+                        <!-- Notes will be added here by JavaScript -->
+                    </div>
+                    
+                    <div class="notes-stats">
+                        <span id="notes-count">0 notes</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="weather-content" class="content-section">
+                <h2>Weather</h2>
+                <div class="weather-search">
+                    <input type="text" id="city-input" placeholder="Enter city name...">
+                    <button id="search-button">Search</button>
+                </div>
+                <div class="api-status">
+                    <p><strong>Note:</strong> Currently using demo weather data until your API key is fully activated (may take up to 2 hours after signup).</p>
+                    <p>To get real weather data, please <a href="https://home.openweathermap.org/users/sign_up" target="_blank">register for a free API key</a> and update the script.js file.</p>
+                </div>
+                <div id="weather-data">
+                    <p>Enter a city name to get the current weather.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>
